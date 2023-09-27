@@ -12,7 +12,7 @@ from selenium.webdriver.chrome.options import Options
 # data = response.json()
 
 # all_csgo_skins = list(data['items_list'].keys())
-CS_FLOAT_CHECKER_URL = 'https://csfloat.com/checker'
+
 moonrise_skin = 'Glock-18 | Moonrise (Minimal Wear)'
 moonrise_decoded = urllib.parse.quote(moonrise_skin)
 start = 0
@@ -22,10 +22,6 @@ NUMERO_PAGINAS_DEFINIDOS_PELO_PADUA = int(NUMERO_ITEMS_A_PEGAR_INFO/NUMERO_ITEMS
 DOLLAR_PRICE_BY_INDIGENA = 4.92
 anuncions_moonrise_url = 'https://steamcommunity.com/market/listings/730/' + moonrise_decoded  +'/render/?query=&start='+ str(start) +'&count='+ str(NUMERO_ITEMS_POR_PAGINA) +'&country=BR&language=brazilian&currency=7&format=json'
 items_info = {}
-SERVICE = Service(executable_path=r"D:\caiom\Documents\chromedriver-win64\chromedriver.exe")
-OPTIONS = webdriver.ChromeOptions()
-OPTIONS.add_argument('--headless')
-DRIVER = webdriver.Chrome(service=SERVICE, options=OPTIONS)
 
 def get_preco(value):
     return ((value['converted_price'] + value['converted_fee'])*DOLLAR_PRICE_BY_INDIGENA)/100
@@ -54,17 +50,22 @@ def get_inspect_game_url(id_anuncio, info_anuncio, asset_id):
     inspect_game_url = inspect_game_url.replace('%assetid%', asset_id)
     return inspect_game_url
 
-for pagina in range(NUMERO_PAGINAS_DEFINIDOS_PELO_PADUA):
+def preenche_info_anuncios(anuncions_moonrise_url, items_info, fill_lista_items_info, pagina):
     response = requests.get(anuncions_moonrise_url)
     data = response.json()
     fill_lista_items_info(data, items_info, pagina)
-    time.sleep(90)
+
+def preenche_info_cslFloatAPI_about_item(items_info):
+    for id_anuncio, item in items_info.items():
+        scraper = CsFloatScraper()
+        scraper.get_item_info(item, DRIVER)
+
+for pagina in range(NUMERO_PAGINAS_DEFINIDOS_PELO_PADUA):
+    preenche_info_anuncios(anuncions_moonrise_url, items_info, fill_lista_items_info, pagina)
     start += NUMERO_ITEMS_POR_PAGINA
+    preenche_info_cslFloatAPI_about_item(items_info)
+    time.sleep(300)
         
-DRIVER.get(CS_FLOAT_CHECKER_URL)
-for id_anuncio, item in items_info.items():
-    scraper = CsFloatScraper()
-    scraper.get_item_info(item, DRIVER)
 
 print(items_info)
 

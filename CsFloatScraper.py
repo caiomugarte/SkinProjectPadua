@@ -1,21 +1,29 @@
-from selenium.webdriver.common.by import By
+from selenium.webDRIVER.common.by import By
 from bs4 import BeautifulSoup
 from lxml import etree
 from ItemInfo import ItemInfo
 import time, random
 
 
+SERVICE = Service(executable_path=r"D:\caiom\Documents\chromedriver-win64\chromedriver.exe")
+OPTIONS = webdriver.ChromeOptions()
+OPTIONS.add_argument('--headless')
+DRIVER = webdriver.Chrome(service=SERVICE, options=OPTIONS)
+CS_FLOAT_CHECKER_URL = 'https://csfloat.com/checker'
+
+
 
 class CsFloatScraper:
-    def get_item_info(self, item_info: ItemInfo, driver):
-        float_input = driver.find_element(by=By.ID, value="mat-input-1")
+    def get_item_info(self, item_info: ItemInfo):
+        DRIVER.get(CS_FLOAT_CHECKER_URL)
+        float_input = DRIVER.find_element(by=By.ID, value="mat-input-1")
 
         float_input.clear()
         float_input.send_keys(item_info.inspect_url)
 
         time.sleep(1 + random.random())
 
-        html = driver.page_source
+        html = DRIVER.page_source
 
         soup = BeautifulSoup(html, 'html.parser')
         dom = etree.HTML(str(soup))
