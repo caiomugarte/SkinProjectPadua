@@ -1,9 +1,6 @@
 from CsFloatScraper import CsFloatScraper
 from ItemInfo import ItemInfo
 import time, random, json, urllib.parse, requests
-from selenium import webdriver
-from selenium.webdriver.chrome.service import Service
-from selenium.webdriver.chrome.options import Options
 
 # get_items_api_url = 'http://csgobackpack.net/api/GetItemsList/v2/'
 
@@ -22,9 +19,10 @@ NUMERO_PAGINAS_DEFINIDOS_PELO_PADUA = int(NUMERO_ITEMS_A_PEGAR_INFO/NUMERO_ITEMS
 DOLLAR_PRICE_BY_INDIGENA = 4.92
 anuncions_moonrise_url = 'https://steamcommunity.com/market/listings/730/' + moonrise_decoded  +'/render/?query=&start='+ str(start) +'&count='+ str(NUMERO_ITEMS_POR_PAGINA) +'&country=BR&language=brazilian&currency=7&format=json'
 items_info = {}
+items = {}
 
 def get_preco(value):
-    return ((value['converted_price'] + value['converted_fee'])*DOLLAR_PRICE_BY_INDIGENA)/100
+    return ((value['converted_price'] + value['converted_fee']))/100
 
 def fill_lista_items_info(data, items_info, pagina):
     if data != None:
@@ -41,8 +39,6 @@ def fill_lista_items_info(data, items_info, pagina):
             item_info.anuncio_id = id_anuncio
             items_info[id_anuncio] = item_info
             print("Adicionei o anuncio " + str(id_anuncio))
-            time.sleep(1 + random.random())
-            print("Vou para o Próximo Anúncio")
 
 def get_inspect_game_url(id_anuncio, info_anuncio, asset_id):
     inspect_game_url = info_anuncio['asset']['market_actions'][0]['link']
@@ -50,24 +46,38 @@ def get_inspect_game_url(id_anuncio, info_anuncio, asset_id):
     inspect_game_url = inspect_game_url.replace('%assetid%', asset_id)
     return inspect_game_url
 
-def preenche_info_anuncios(anuncions_moonrise_url, items_info, fill_lista_items_info, pagina):
+def preenche_info_anuncios(anuncions_moonrise_url, items_info, pagina):
     response = requests.get(anuncions_moonrise_url)
-    data = response.json()
+    if response.status_code == 200:
+        salva_novos_anuncios(response.json(), pagina)
+    
+    data = get_anuncios_salvos_json(pagina)
     fill_lista_items_info(data, items_info, pagina)
 
-def preenche_info_cslFloatAPI_about_item(items_info):
+def salva_novos_anuncios(anuncios_salvos, pagina):
+    with open ("GlockMoonriseMinimalWearAnuncios" + str(pagina) + ".json", 'w') as file:
+        json.dump(anuncios_salvos, file)
+
+def get_anuncios_salvos_json(pagina):
+    with open ("GlockMoonriseMinimalWearAnuncios" + str(pagina) + ".json", 'r') as file:
+        anuncios_json = json.load(file)
+    return anuncios_json
+
+def preenche_info_cs_float_api_about_item(items_info):
     for id_anuncio, item in items_info.items():
         scraper = CsFloatScraper()
-        scraper.get_item_info(item, DRIVER)
+        scraper.get_item_info(item)     
 
-for pagina in range(NUMERO_PAGINAS_DEFINIDOS_PELO_PADUA):
-    preenche_info_anuncios(anuncions_moonrise_url, items_info, fill_lista_items_info, pagina)
+for pagina in range(1, NUMERO_PAGINAS_DEFINIDOS_PELO_PADUA):
+    preenche_info_anuncios(anuncions_moonrise_url, items_info, pagina)
     start += NUMERO_ITEMS_POR_PAGINA
-    preenche_info_cslFloatAPI_about_item(items_info)
+    preenche_info_cs_float_api_about_item(items_info)
+    
+    items["Pagina " + pagina] = items_info
+
+    with open("GlockMoonriseMinimalWearInfo.json", "w") as file:
+        json.dump(item_info_json, file)
+
+    items_info.clear()
     time.sleep(300)
         
-
-print(items_info)
-
-with open("GlockMoonriseMinimalWear.json", 'w') as file:
-    json.dump(items_info, file)
